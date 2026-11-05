@@ -7,7 +7,7 @@ have two channels, `lift` and `grip`. The values are made up. Nothing here is re
 Needs the `lerobot` extra: pip install ".[lerobot]"
 """
 import json
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 
@@ -41,7 +41,7 @@ def write_video(path, total):
     path.parent.mkdir(parents=True, exist_ok=True)
     raw = b"".join(bytes([level(i) % 256]) * (64 * 48 * 3) for i in range(total))
     # Fixed arguments; the one path is the example's own output file, made absolute so it cannot be read as an option.
-    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",  # nosemgrep: dangerous-subprocess-use-audit
+    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",  # nosemgrep: dangerous-subprocess-use-audit  # nosec B603
                     "-s", "64x48", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p",
                     str(path.absolute())], input=raw, check=True)
 

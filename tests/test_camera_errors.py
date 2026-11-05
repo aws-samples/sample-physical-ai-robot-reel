@@ -6,7 +6,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
-import subprocess
+import subprocess  # nosec B404
 import sys
 import tempfile
 import unittest
@@ -56,7 +56,7 @@ class CameraErrorTest(unittest.TestCase):
             "index": list(range(LENGTH)), "task_index": [0]*LENGTH,
         }), root/DATA)
         frames = b"".join(bytes([20+14*i])*(64*48*3) for i in range(LENGTH))
-        subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
+        subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",  # nosec B603
                         "-s", "64x48", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-qp", "0",
                         "-pix_fmt", "yuv444p", str(root/VIDEO)], input=frames, check=True)
         pq.write_table(pa.table({
@@ -75,7 +75,7 @@ class CameraErrorTest(unittest.TestCase):
         paths = [str(REPOSITORY), os.environ.get("PYTHONPATH")]
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(p for p in paths if p))
         try:
-            return subprocess.run([sys.executable, "-m", "robot_reel.lerobot", *map(str, args)],
+            return subprocess.run([sys.executable, "-m", "robot_reel.lerobot", *map(str, args)],  # nosec B603
                                   stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                   timeout=CLI_TIMEOUT, env=env, cwd=self.temporary)
         except subprocess.TimeoutExpired:

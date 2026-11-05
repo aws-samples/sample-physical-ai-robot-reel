@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 import re
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import tempfile
 import unicodedata
 
@@ -379,9 +379,9 @@ def run(command, stdin=None):
     or an empty stdin, so a failing decode returns at once instead of waiting for keyboard input."""
     argv = [str(item) for item in command]
     if stdin is None:
-        result = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True)  # nosemgrep: dangerous-subprocess-use-audit
+        result = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True)  # nosemgrep: dangerous-subprocess-use-audit  # nosec B603
     else:
-        result = subprocess.run(argv, input=stdin, capture_output=True)  # nosemgrep: dangerous-subprocess-use-audit
+        result = subprocess.run(argv, input=stdin, capture_output=True)  # nosemgrep: dangerous-subprocess-use-audit  # nosec B603
     if result.returncode:
         lines = result.stderr.decode(errors="replace").strip().splitlines()
         raise ValueError("ffmpeg failed: "+(lines or ["no output"])[-1])
