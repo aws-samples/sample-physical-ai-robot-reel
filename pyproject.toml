@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robot-reel-replay"
+version = "0.1.0"
+description = "Sample: replay one LeRobotDataset episode offline, verify it against its source files, and seal a finding."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT-0"
+license-files = ["LICENSE"]
+dependencies = []
+
+[project.optional-dependencies]
+# Needed only to READ a dataset (export, --check-media, --check-source). --verify, --mark and the viewer use the standard library.
+lerobot = ["pyarrow>=15", "huggingface_hub>=0.25", "numpy>=1.26", "imageio-ffmpeg>=0.5"]
+
+[project.scripts]
+robot-reel = "robot_reel.cli:main"
+
+[tool.setuptools]
+packages = ["robot_reel"]
+
+[tool.setuptools.package-data]
+robot_reel = ["lerobot.html"]
