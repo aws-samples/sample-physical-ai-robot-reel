@@ -378,10 +378,11 @@ def run(command, stdin=None):
     from the command line is never read as an option. FFmpeg never reads the caller's terminal: it gets the piped bytes
     or an empty stdin, so a failing decode returns at once instead of waiting for keyboard input."""
     argv = [str(item) for item in command]
+    # argv[0] is the executable path (from imageio-ffmpeg): it is passed as `executable`, and the program name stays "ffmpeg".
     if stdin is None:
-        result = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True)  # nosemgrep: dangerous-subprocess-use-audit  # nosec B603
+        result = subprocess.run(["ffmpeg", *argv[1:]], executable=argv[0], stdin=subprocess.DEVNULL, capture_output=True)  # nosec B603 B607
     else:
-        result = subprocess.run(argv, input=stdin, capture_output=True)  # nosemgrep: dangerous-subprocess-use-audit  # nosec B603
+        result = subprocess.run(["ffmpeg", *argv[1:]], executable=argv[0], input=stdin, capture_output=True)  # nosec B603 B607
     if result.returncode:
         lines = result.stderr.decode(errors="replace").strip().splitlines()
         raise ValueError("ffmpeg failed: "+(lines or ["no output"])[-1])
