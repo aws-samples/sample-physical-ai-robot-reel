@@ -333,7 +333,7 @@ def encode_video(source, camera, length, fps, output, crf):
         run([ffmpeg(), "-v", "error", "-y", "-ss", f"{start:.6f}", "-i", str(path),
              "-map", "0:v:0", "-frames:v", str(length), "-an", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
              "-r", repr(fps), "-c:v", "libx264", "-preset", "medium", "-crf", str(crf), "-pix_fmt", "yuv420p",
-             "-movflags", "+faststart", str(output)])
+             "-movflags", "+faststart", str(Path(output).absolute())])
     except ValueError as exc:
         cause = str(exc).removeprefix("ffmpeg failed: ")
         # Show dataset-relative names only: never a host, temporary or Hub cache path.
@@ -363,7 +363,7 @@ def encode_images(source, camera, length, fps, output, crf, episode):
         decoder = kind
     run([ffmpeg(), "-v", "error", "-y", "-f", "image2pipe", "-framerate", repr(fps), "-c:v", decoder, "-i", "-",
          "-frames:v", str(length), "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:v", "libx264",
-         "-preset", "medium", "-crf", str(crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output)],
+         "-preset", "medium", "-crf", str(crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(Path(output).absolute())],
         b"".join(payloads))
 
 
@@ -371,12 +371,17 @@ IMAGE_MAGIC = ((b"\x89PNG\r\n\x1a\n", "png"), (b"\xff\xd8\xff", "mjpeg"))
 
 
 def run(command, stdin=None):
-    # ffmpeg never reads the caller's terminal: it gets the piped bytes or an empty stdin,
-    # so a failing decode returns at once instead of waiting for keyboard input.
+    """Run FFmpeg once.
+
+    `command` is an argument list built in this module and executed without a shell: the executable comes from
+    imageio-ffmpeg and every other item is a fixed option or a path. Callers pass absolute paths, so text from a dataset or
+    from the command line is never read as an option. FFmpeg never reads the caller's terminal: it gets the piped bytes
+    or an empty stdin, so a failing decode returns at once instead of waiting for keyboard input."""
+    argv = [str(item) for item in command]
     if stdin is None:
-        result = subprocess.run(command, stdin=subprocess.DEVNULL, capture_output=True)
+        result = subprocess.run(argv, stdin=subprocess.DEVNULL, capture_output=True)  # nosemgrep: dangerous-subprocess-use-audit
     else:
-        result = subprocess.run(command, input=stdin, capture_output=True)
+        result = subprocess.run(argv, input=stdin, capture_output=True)  # nosemgrep: dangerous-subprocess-use-audit
     if result.returncode:
         lines = result.stderr.decode(errors="replace").strip().splitlines()
         raise ValueError("ffmpeg failed: "+(lines or ["no output"])[-1])

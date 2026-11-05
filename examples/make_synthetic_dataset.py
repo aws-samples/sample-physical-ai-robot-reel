@@ -40,9 +40,10 @@ def frames(episode, start):
 def write_video(path, total):
     path.parent.mkdir(parents=True, exist_ok=True)
     raw = b"".join(bytes([level(i) % 256]) * (64 * 48 * 3) for i in range(total))
-    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
+    # Fixed arguments; the one path is the example's own output file, made absolute so it cannot be read as an option.
+    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",  # nosemgrep: dangerous-subprocess-use-audit
                     "-s", "64x48", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p",
-                    str(path)], input=raw, check=True)
+                    str(path.absolute())], input=raw, check=True)
 
 
 def main(target):
