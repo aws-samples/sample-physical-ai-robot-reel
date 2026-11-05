@@ -32,7 +32,7 @@ class SyntheticDatasetTest(unittest.TestCase):
         import imageio_ffmpeg
         path.parent.mkdir(parents=True, exist_ok=True)
         frames = b"".join(bytes([level(first+i)])*(64*48*3) for i in range(count))
-        subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",  # nosec B603
+        subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",  # nosec B603  # nosemgrep: dangerous-subprocess-use-audit
                         "-s", "64x48", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-qp", "0",
                         "-pix_fmt", "yuv444p", str(path)], input=frames, check=True)
 
@@ -96,7 +96,7 @@ class SyntheticDatasetTest(unittest.TestCase):
     def decoded_levels(self, path):
         import imageio_ffmpeg
         size = 64*48*3
-        raw = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", str(path), "-f", "rawvideo",  # nosec B603
+        raw = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-i", str(path), "-f", "rawvideo",  # nosec B603  # nosemgrep: dangerous-subprocess-use-audit
                               "-pix_fmt", "rgb24", "-"], capture_output=True, check=True).stdout
         self.assertEqual(len(raw) % size, 0)
         return [sum(raw[i:i+size])/size for i in range(0, len(raw), size)]
@@ -152,7 +152,7 @@ class SyntheticDatasetTest(unittest.TestCase):
             (root/"meta/info.json").write_text(json.dumps(info))
             name = root/"data/chunk-000/episode_000001.parquet"
             table = pq.read_table(name)
-            images = [{"bytes": subprocess.run(  # nosec B603
+            images = [{"bytes": subprocess.run(  # nosec B603  # nosemgrep: dangerous-subprocess-use-audit
                 [imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "64x48",
                  "-i", "-", "-f", "image2pipe", "-c:v", "png", "-"],
                 input=bytes([level(LENGTHS[0]+i)])*(64*48*3), capture_output=True, check=True).stdout, "path": None}
