@@ -20,7 +20,7 @@ from importlib import metadata
 import json
 import math
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import shutil
 import subprocess  # nosec B404
@@ -106,13 +106,33 @@ class Source:
         license = getattr(info.card_data, "license", None) if info.card_data else None
         self.license = license if isinstance(license, str) else None
 
+    def contain(self, name, field="dataset file"):
+        """Reject a dataset-relative name (from meta/info.json or episode metadata) that leaves the dataset.
+
+        A local name is resolved, which follows symlinks, and must stay inside the resolved root. A Hub
+        name must be relative and free of '..' parts. Messages show the dataset-relative value only."""
+        if self.root:
+            inside = (self.root/name).resolve().is_relative_to(self.root)
+        else:
+            parts = PurePosixPath(name)
+            inside = not parts.is_absolute() and ".." not in parts.parts
+        if not inside:
+            # An absolute value is not shown: it could name a file on this machine.
+            shown = "(an absolute path)" if PurePosixPath(name).is_absolute() or Path(name).is_absolute() else repr(name)
+            raise ValueError(f"{field} {shown} points outside the dataset folder; Robot Reel reads only files inside "
+                             "the dataset (no absolute paths, '..' or symlinks out of it). Fix meta/info.json or "
+                             "the episode metadata, or copy the files into the dataset.")
+        return name
+
     def file(self, name):
         if self.root:
+            self.contain(name)
             path = self.root/name
             if not path.is_file():
                 raise ValueError(f"Missing dataset file: {name}")
             return path
         from huggingface_hub import hf_hub_download
+        self.contain(name)
         return Path(hf_hub_download(self.repo_id, name, repo_type="dataset", revision=self.revision))
 
     def parquet(self, prefix):
@@ -194,6 +214,7 @@ def locate(source, info, episode):
         videos = {k: (info["video_path"].format(video_key=k, chunk_index=row[f"videos/{k}/chunk_index"],
                                                 file_index=row[f"videos/{k}/file_index"]),
                       float(row[f"videos/{k}/from_timestamp"])) for k in cameras}
+        contain_paths(source, data, videos)
         return row, data, videos, "meta/episodes"
     row = None
     for line in source.file("meta/episodes.jsonl").read_text().splitlines():
@@ -206,7 +227,15 @@ def locate(source, info, episode):
     data = info["data_path"].format(episode_chunk=chunk, episode_index=episode)
     videos = {k: (info["video_path"].format(episode_chunk=chunk, video_key=k, episode_index=episode), 0.)
               for k in cameras}
+    contain_paths(source, data, videos)
     return row, data, videos, "meta/episodes.jsonl"
+
+
+def contain_paths(source, data, videos):
+    """Check the formatted data_path and video_path values before any file is read or written."""
+    source.contain(data, "meta/info.json data_path")
+    for key, (name, _) in videos.items():
+        source.contain(name, f"{key}: meta/info.json video_path")
 
 
 REPAIR = " Robot Reel does not reorder, fill or interpolate frames; repair or re-export the episode."

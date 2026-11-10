@@ -101,3 +101,13 @@ camera key and names the file relative to the dataset root. It never prints an a
   FFmpeg's last error line. The partly written output folder stays; export again into a fresh `--output` folder.
 
 A video that is absent is reported as `Missing dataset file: videos/...` before any file is written.
+
+### Dataset paths
+
+The `data_path` and `video_path` templates in `meta/info.json`, filled with the chunk and file numbers from the episode
+metadata, must name files inside the dataset folder. The path is resolved, which follows symlinks, so an absolute path,
+a `..` part or a symlink that points out of the dataset folder stops the export (and `--check-source`) with exit status 2
+before any file is written, for example `meta/info.json data_path '../other/file-000.parquet' points outside the dataset
+folder; ...`. An absolute value is shown as `(an absolute path)`. Symlinks that stay inside the dataset folder work. A
+folder whose files are symlinks to somewhere else (for example a Hugging Face cache snapshot) is rejected: copy it with
+the links resolved (`cp -RL`) or pass the Hub dataset id instead.
