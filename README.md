@@ -5,6 +5,28 @@ single folder that opens in a browser without a server, carries its own checksum
 anyone who holds the folder. It is sample code for learning and experimenting. It is not an AWS service, and it has
 not been hardened or load-tested for production use.
 
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/media/demo.png">
+  <img src="docs/media/demo.gif" width="800" alt="Screen recording, about 17 seconds, looping. The exported page for episode 0 of lerobot/svla_so101_pickplace opens in a browser: two camera views (up and side) and six joint charts of commanded versus measured position on one timeline. The timeline is scrubbed from frame 0 to 302. The sealed finding at frame 167 reads: Gripper commanded closed, measured stays open: the brick is in the gripper, with action/gripper.pos 0.077279754 and observation.state/gripper.pos 17.449665; pressing Go to frame 167 moves both cameras and charts to that frame. A terminal panel then shows robot-reel lerobot so101 --verify printing the episode summary and the finding, exit status 0. A last panel copies the folder, changes the value 17.449665 to 0.5 in so101-copy/episode.json, and runs --verify again: error: Hash mismatch: episode.json, exit status 2.">
+</picture>
+
+Episode 0 of a public SO-101 pick-and-place dataset, exported and marked with this sample, then checked with
+`--verify`: the unchanged folder passes, and a copy with one value changed fails and names the file. To reproduce it:
+
+```bash
+robot-reel lerobot lerobot/svla_so101_pickplace --episode 0 \
+  --revision f641879e22172be7e8161d5e6c1503c2d2feb657 --output so101
+robot-reel lerobot so101 --mark 167 --signal action/gripper.pos --signal observation.state/gripper.pos \
+  --note "Gripper commanded closed, measured stays open: the brick is in the gripper."
+robot-reel lerobot so101 --verify                       # exit status 0
+cp -R so101 so101-copy
+sed -i '' 's/17.449665/0.5/' so101-copy/episode.json   # macOS sed; on Linux use sed -i
+robot-reel lerobot so101-copy --verify                  # Hash mismatch: episode.json, exit status 2
+```
+
+Frames: [lerobot/svla_so101_pickplace](https://huggingface.co/datasets/lerobot/svla_so101_pickplace) at commit
+`f641879e`, Apache-2.0 (see [docs/third-party.md](docs/third-party.md)).
+
 Physical AI teams often report robot results as a number in a slide or a chat message. The number cannot be re-checked,
 because the data behind it is not at hand. This sample shows a small, concrete way to keep the evidence next to the
 claim:
@@ -64,7 +86,8 @@ robot-reel lerobot ~/path/to/your_dataset --episode 3 --output artifacts/mine
 robot-reel lerobot some-org/some-dataset --episode 0 --output artifacts/episode0
 ```
 
-Datasets keep their own licenses and are not part of this repository. Check the dataset's terms before you share an
+Datasets keep their own licenses and are not part of this repository (apart from the demo frames in
+`docs/media/`, credited in [docs/third-party.md](docs/third-party.md)). Check the dataset's terms before you share an
 export that contains its camera frames. Details, supported formats (LeRobotDataset v2.0, v2.1, v3.0), limits and error
 messages: [docs/lerobot.md](docs/lerobot.md).
 
